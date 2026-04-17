@@ -58,6 +58,11 @@ public class SystemMessageService {
         save(room, SupportSystemMessageTemplate.ROOM_AUTO_CLOSED, true);
     }
 
+    @Transactional
+    public void appendCounselorRequestedMessage(SupportRoom room) {
+        save(room, SupportSystemMessageTemplate.COUNSELOR_REQUESTED, true);
+    }
+
     private void save(SupportRoom room, String content, boolean broadcast) {
         // 시스템 메시지도 일반 메시지처럼 이력에 남기고 lastMessage 포인터를 함께 갱신
         SupportMessage savedMessage = supportMessageRepository.save(SupportMessage.system(room, content));

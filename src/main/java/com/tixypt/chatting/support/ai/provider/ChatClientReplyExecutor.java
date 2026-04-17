@@ -21,7 +21,7 @@ import java.util.function.Supplier;
 @RequiredArgsConstructor
 public class ChatClientReplyExecutor {
 
-    private final AiReplyResultMapper aiReplyResultMapper;
+    private final AiReplyDraftFactory aiReplyDraftFactory;
 
     public AiReplyDraft execute(
             String providerName,
@@ -32,7 +32,7 @@ public class ChatClientReplyExecutor {
         ChatClient chatClient = resolveClient(chatClientSupplier, requiredSettings);
         if (chatClient == null) {
             log.info("{} 설정이나 ChatClient가 준비되지 않아 fallback 응답으로 대체합니다.", providerName);
-            return aiReplyResultMapper.fallback();
+            return aiReplyDraftFactory.fallback();
         }
 
         try {
@@ -41,10 +41,10 @@ public class ChatClientReplyExecutor {
                     .call()
                     .content();
 
-            return aiReplyResultMapper.toAnswer(content);
+            return aiReplyDraftFactory.toAnswer(content);
         } catch (RuntimeException exception) {
             log.warn("{} quick reply 생성에 실패해 fallback 응답으로 대체합니다.", providerName, exception);
-            return aiReplyResultMapper.fallback();
+            return aiReplyDraftFactory.fallback();
         }
     }
 

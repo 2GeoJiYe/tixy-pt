@@ -8,7 +8,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class MessageQueryRequest {
+public class MessageCursorRequest {
 
     // 이 값보다 과거 메시지만 조회
     @Positive(message = "beforeMessageId는 1 이상이어야 합니다.")

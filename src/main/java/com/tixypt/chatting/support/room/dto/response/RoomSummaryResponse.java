@@ -21,6 +21,8 @@ public record RoomSummaryResponse(
         // 방이 처음 생성된 시각
         LocalDateTime createdAt,
 
+        LocalDateTime customerRequestedCounselorAt,
+
         // 현재 로그인 사용자가 아직 읽지 않은 메시지 수
         long unreadCount
 ) {
@@ -31,6 +33,7 @@ public record RoomSummaryResponse(
                 room.getLastMessageId(),
                 room.getLastMessageAt(),
                 room.getCreatedAt(),
+                room.getCustomerRequestedCounselorAt(),
                 unreadCount
         );
     }

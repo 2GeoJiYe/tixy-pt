@@ -1,6 +1,6 @@
 package com.tixypt.chatting.support.message.controller;
 
-import com.tixypt.chatting.support.message.dto.request.MessageQueryRequest;
+import com.tixypt.chatting.support.message.dto.request.MessageCursorRequest;
 import com.tixypt.chatting.support.message.dto.response.MessageCursorResponse;
 import com.tixypt.chatting.support.message.service.MessageService;
 import com.tixypt.core.dto.ApiResponse;
@@ -22,7 +22,7 @@ public class MessageQueryController {
     public ApiResponse<MessageCursorResponse> getRoomMessages(
             @LoginUser LoginUserInfoDto loginUser,
             @PathVariable Long roomId,
-            @Valid @ModelAttribute MessageQueryRequest query
+            @Valid @ModelAttribute MessageCursorRequest query
             ) {
         return ApiResponse.success(
                 messageService.getMessages(

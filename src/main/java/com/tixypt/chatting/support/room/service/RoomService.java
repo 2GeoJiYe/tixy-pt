@@ -9,10 +9,13 @@ import com.tixypt.chatting.support.exception.SupportRoomException;
 import com.tixypt.chatting.support.message.repository.SupportMessageRepository;
 import com.tixypt.chatting.support.message.service.SystemMessageService;
 import com.tixypt.chatting.support.policy.SupportAccessPolicy;
+import com.tixypt.chatting.support.room.dto.event.RoomQueueEvent;
 import com.tixypt.chatting.support.room.dto.response.CreateRoomResponse;
+import com.tixypt.chatting.support.room.dto.response.RequestCounselorResponse;
 import com.tixypt.chatting.support.room.dto.response.RoomDetailResponse;
 import com.tixypt.chatting.support.room.dto.response.RoomSummaryResponse;
 import com.tixypt.chatting.support.room.repository.SupportRoomRepository;
+import com.tixypt.chatting.support.websocket.SupportEventDispatcher;
 import com.tixypt.core.dto.SliceResponse;
 import com.tixypt.core.util.PageableUtil;
 import jakarta.persistence.EntityManager;
@@ -23,6 +26,7 @@ import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -40,6 +44,7 @@ public class RoomService {
     private final SupportMessageRepository supportMessageRepository;
     private final SystemMessageService systemMessageService;
     private final MemberService memberService;
+    private final SupportEventDispatcher supportEventDispatcher;
     private final EntityManager entityManager;
 
     // 고객이 현재 이어서 사용할 문의방을 확보
@@ -89,7 +94,51 @@ public class RoomService {
         return RoomDetailResponse.from(room);
     }
 
+    @Transactional
+    public RequestCounselorResponse requestCounselor(Long loginUserId, Long roomId) {
+        Member loginUser = memberService.findById(loginUserId);
+        SupportAccessPolicy.validateCustomerOnly(loginUser);
 
+        SupportRoom room = supportRoomRepository.findByIdForUpdate(roomId)
+                .orElseThrow(() -> new SupportRoomException(SupportRoomErrorCode.ROOM_NOT_FOUND));
+
+        SupportAccessPolicy.validateRoomAccess(loginUser, room);
+        SupportAccessPolicy.validateRoomWritable(room);
+
+        boolean reopened = room.reopen();
+        if (room.getCounselorUserId() != null) {
+            return buildCounselorRequestResponse(room, false, reopened, false, true);
+        }
+
+        if (!room.requestCounselor(LocalDateTime.now())) {
+            return buildCounselorRequestResponse(room, false, reopened, true, false);
+        }
+
+        systemMessageService.appendCounselorRequestedMessage(room);
+        supportEventDispatcher.dispatchQueueEventAfterCommit(RoomQueueEvent.requested(room.getId()));
+        return buildCounselorRequestResponse(room, true, reopened, false, false);
+    }
+
+
+
+    private RequestCounselorResponse buildCounselorRequestResponse(
+            SupportRoom room,
+            boolean requested,
+            boolean reopened,
+            boolean alreadyRequested,
+            boolean alreadyAssigned
+    ) {
+        return new RequestCounselorResponse(
+                room.getId(),
+                room.getStatus(),
+                room.getCounselorUserId(),
+                room.getCustomerRequestedCounselorAt(),
+                requested,
+                reopened,
+                alreadyRequested,
+                alreadyAssigned
+        );
+    }
 
     // 방 생성 시점에는 담당 상담원이 정해지지 않았으니까 counselor는 null로 시작
     private CreateRoomResponse createNewOpenRoom(Long customerUserId) {

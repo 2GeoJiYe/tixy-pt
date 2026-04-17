@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
-public class AiReplyResultMapper {
+public class AiReplyDraftFactory {
 
     private final AiProperties aiProperties;
 

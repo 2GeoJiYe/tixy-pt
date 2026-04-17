@@ -16,6 +16,10 @@ public record RoomQueueEvent(
         return new RoomQueueEvent(roomId, RoomQueueEventType.RELEASED, null);
     }
 
+    public static RoomQueueEvent requested(Long roomId) {
+        return new RoomQueueEvent(roomId, RoomQueueEventType.REQUESTED, null);
+    }
+
     public static RoomQueueEvent solved(Long roomId) {
         return new RoomQueueEvent(roomId, RoomQueueEventType.SOLVED, null);
     }

@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/support/v1/ai")
-public class AiConfigController {
+public class AiStatusController {
 
     private final AiStatusService aiStatusService;
 
