@@ -133,17 +133,23 @@ public class SupportRoom extends BaseEntity {
         this.counselorLastActiveAt = activeAt;
     }
 
+    // 문의방을 최종 종료 상태로 바꿈
+    // 이미 CLOSED라면 중복 종료 막고 종료 직전 담당 상담원을 마지막 담당 이력으로 남김
     public boolean close() {
         if (this.status == SupportRoomStatus.CLOSED) {
             return false;
         }
 
-        // 종료 직전 담당자를 lastCounselorUserId로 남겨 둬야 이후에 내가 처리했던 종료 문의 이력을 다시 조회할 수 있음
+        boolean solvedRoom = this.status == SupportRoomStatus.SOLVED;
+
         if (this.counselorUserId != null) {
             this.lastCounselorUserId = this.counselorUserId;
         }
 
         this.status = SupportRoomStatus.CLOSED;
+        if (!solvedRoom) {
+            this.solvedAt = null;
+        }
         this.counselorUserId = null;
         this.counselorLastReadMessageId = null;
         this.counselorLastReadAt = null;

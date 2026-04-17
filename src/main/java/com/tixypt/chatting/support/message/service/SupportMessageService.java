@@ -26,7 +26,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static com.tixypt.chatting.support.policy.SupportAccessPolicy.*;
+import static com.tixypt.chatting.support.policy.SupportAccessPolicy.isCounselor;
+
 
 @Service
 @RequiredArgsConstructor
@@ -43,6 +44,7 @@ public class SupportMessageService {
     private final SupportEventDispatcher supportEventDispatcher;
 
 
+    // 최신 메시지부터 커서 기반으로 조회
     public SupportMessageSliceResponse getMessages(
             Long loginUserId,
             Long roomId,
@@ -61,7 +63,6 @@ public class SupportMessageService {
 
         boolean hasNext = messages.size() > querySize;
         if (hasNext) {
-            // 마지막 1건은 다음 페이지 존재 여부만 판단하기 위한 여분 데이터
             messages.remove(messages.size() - 1);
         }
 
@@ -112,6 +113,7 @@ public class SupportMessageService {
 
 
 
+    // beforeMessageId 유무에 따라서 첫 페이지 또는 다음 페이지 메시지를 일긍ㅁ
     private List<SupportMessage> fetchMessages(Long roomId, Long beforeMessageId, PageRequest pageRequest) {
         if (beforeMessageId == null) {
             return supportMessageRepository.findByRoomIdOrderByIdDesc(roomId, pageRequest);
@@ -119,6 +121,7 @@ public class SupportMessageService {
         return supportMessageRepository.findByRoomIdAndIdLessThanOrderByIdDesc(roomId, beforeMessageId, pageRequest);
     }
 
+    // 메시지 본문 검증
     private String normalizeContent(String content) {
         if (!StringUtils.hasText(content)) {
             throw new SupportRoomException(SupportRoomErrorCode.INVALID_MESSAGE_CONTENT);
@@ -131,9 +134,9 @@ public class SupportMessageService {
         return normalizedContent;
     }
 
+    // 고객이 SOLVED 문의방에 다시 메시지를 보냈으면 OPEN으로 되돌림
     private boolean reopenSolvedRoomIfNeeded(Member loginUser, SupportRoom room) {
-        // 고객이 해결 대기 상태에서 다시 메시지를 보내면 같은 문의를 reopened 처리
-        if (!SupportAccessPolicy.isCounselor(loginUser) && room.getStatus() == SupportRoomStatus.SOLVED) {
+        if (!isCounselor(loginUser) && room.getStatus() == SupportRoomStatus.SOLVED) {
             return room.reopen();
         }
         return false;
