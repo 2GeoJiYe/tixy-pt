@@ -46,3 +46,9 @@ management:
 support:
   claim-timeout-minutes: 30
   claim-timeout-check-ms: 60000
+  ai:
+    mode: ${SUPPORT_AI_MODE:hybrid}
+    provider: ${SUPPORT_AI_PROVIDER:ollama}
+    rag-enabled: ${SUPPORT_AI_RAG_ENABLED:false}
+    recent-message-context-limit: ${SUPPORT_AI_RECENT_MESSAGE_CONTEXT_LIMIT:5}
+    max-response-characters: ${SUPPORT_AI_MAX_RESPONSE_CHARACTERS:300}

@@ -1,5 +1,6 @@
 package com.tixypt.chatting.support.entity;
 
+import com.tixypt.chatting.support.enums.SupportRoomStatus;
 import com.tixypt.core.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -44,6 +45,10 @@ public class SupportRoom extends BaseEntity {
     @Column(name = "last_message_at")
     private LocalDateTime lastMessageAt;
 
+    // SOLVED 상태로 전환된 시각 자동 종료가 해결 대기 시작 시간을 기준으로 계산하니까 별도 컬럼
+    @Column(name = "solved_at")
+    private LocalDateTime solvedAt;
+
     // 고객이 어디까지 읽었는지 기록하는 마지막 메시지 id
     @Column(name = "customer_last_read_message_id")
     private Long customerLastReadMessageId;
@@ -73,6 +78,7 @@ public class SupportRoom extends BaseEntity {
             SupportRoomStatus status,
             Long lastMessageId,
             LocalDateTime lastMessageAt,
+            LocalDateTime solvedAt,
             Long customerLastReadMessageId,
             Long counselorLastReadMessageId,
             LocalDateTime customerLastReadAt,
@@ -85,6 +91,7 @@ public class SupportRoom extends BaseEntity {
         this.status = status;
         this.lastMessageId = lastMessageId;
         this.lastMessageAt = lastMessageAt;
+        this.solvedAt = solvedAt;
         this.customerLastReadMessageId = customerLastReadMessageId;
         this.counselorLastReadMessageId = counselorLastReadMessageId;
         this.customerLastReadAt = customerLastReadAt;
@@ -145,22 +152,25 @@ public class SupportRoom extends BaseEntity {
     }
 
     // OPEN 상태에서만 해결 대기 상태로 전환
-    public boolean solve() {
+    public boolean solve(LocalDateTime solvedAt) {
+        // OPEN 상태에서만 해결 대기 상태로 전환
         if (this.status != SupportRoomStatus.OPEN) {
             return false;
         }
 
         this.status = SupportRoomStatus.SOLVED;
+        this.solvedAt = solvedAt;
         return true;
     }
 
-    // 고객이 다시 메시지를 보내면 SOLVED 방을 별도 액션 없이 다시 OPEN으로 되돌림
+    // 고객이 다시 메시지를 보내면 SOLVED 방을 다시 OPEN으로 되돌림
     public boolean reopen() {
         if (this.status != SupportRoomStatus.SOLVED) {
             return false;
         }
 
         this.status = SupportRoomStatus.OPEN;
+        this.solvedAt = null;
         return true;
     }
 

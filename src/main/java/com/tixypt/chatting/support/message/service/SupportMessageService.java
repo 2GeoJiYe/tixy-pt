@@ -3,9 +3,9 @@ package com.tixypt.chatting.support.message.service;
 import com.tixypt.api.member.entity.Member;
 import com.tixypt.api.member.service.MemberService;
 import com.tixypt.chatting.support.entity.SupportMessage;
-import com.tixypt.chatting.support.entity.SupportMessageSenderType;
+import com.tixypt.chatting.support.enums.SupportMessageSenderType;
 import com.tixypt.chatting.support.entity.SupportRoom;
-import com.tixypt.chatting.support.entity.SupportRoomStatus;
+import com.tixypt.chatting.support.enums.SupportRoomStatus;
 import com.tixypt.chatting.support.exception.SupportRoomErrorCode;
 import com.tixypt.chatting.support.exception.SupportRoomException;
 import com.tixypt.chatting.support.message.dto.event.SupportMessageEvent;
@@ -25,8 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static com.tixypt.chatting.support.policy.SupportAccessPolicy.isCounselor;
-import static com.tixypt.chatting.support.policy.SupportAccessPolicy.validateRoomAccess;
+import static com.tixypt.chatting.support.policy.SupportAccessPolicy.*;
 
 @Service
 @RequiredArgsConstructor
@@ -128,13 +127,6 @@ public class SupportMessageService {
         return normalizedContent;
     }
 
-
-    // 종료된 문의방은 이력 조회만 가능하고 새 메시지는 받지 않도록 막아서 닫힌 방 상태가 실시간 송신으로 다시 깨지지 않게 함
-    private void validateRoomWritable(SupportRoom room) {
-        if (room.getStatus() == SupportRoomStatus.CLOSED) {
-            throw new SupportRoomException(SupportRoomErrorCode.ROOM_ALREADY_CLOSED);
-        }
-    }
 
     // beforeMessageId가 없으면 최신 페이지를 조회하고 있으면 해당 메시지보다 과거 메시지만 이어서 조회
     private List<SupportMessage> fetchMessages(Long roomId, Long beforeMessageId, PageRequest pageRequest) {

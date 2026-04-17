@@ -4,7 +4,7 @@ import com.tixypt.api.member.entity.Member;
 import com.tixypt.api.member.enums.MemberRole;
 import com.tixypt.api.member.service.MemberService;
 import com.tixypt.chatting.support.entity.SupportRoom;
-import com.tixypt.chatting.support.entity.SupportRoomStatus;
+import com.tixypt.chatting.support.enums.SupportRoomStatus;
 import com.tixypt.chatting.support.exception.SupportRoomErrorCode;
 import com.tixypt.chatting.support.exception.SupportRoomException;
 import com.tixypt.chatting.support.message.repository.SupportMessageRepository;
@@ -18,6 +18,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+
+import static com.tixypt.chatting.support.policy.SupportAccessPolicy.isCounselor;
+import static com.tixypt.chatting.support.policy.SupportAccessPolicy.validateRoomWritable;
 
 @Service
 @RequiredArgsConstructor
@@ -120,16 +123,5 @@ public class SupportReadReceiptService {
                 lastReadMessageId,
                 loginUser.getId()
         );
-    }
-
-    // 종료된 문의방은 읽음 상태도 더 이상 갱신하지 않도록 막음
-    private void validateRoomWritable(SupportRoom room) {
-        if (room.getStatus() == SupportRoomStatus.CLOSED) {
-            throw new SupportRoomException(SupportRoomErrorCode.ROOM_ALREADY_CLOSED);
-        }
-    }
-
-    private boolean isCounselor(Member loginUser) {
-        return loginUser.getRole() == MemberRole.ADMIN;
     }
 }

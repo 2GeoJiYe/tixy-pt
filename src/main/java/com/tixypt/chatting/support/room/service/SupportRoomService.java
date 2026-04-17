@@ -3,7 +3,7 @@ package com.tixypt.chatting.support.room.service;
 import com.tixypt.api.member.entity.Member;
 import com.tixypt.api.member.service.MemberService;
 import com.tixypt.chatting.support.entity.SupportRoom;
-import com.tixypt.chatting.support.entity.SupportRoomStatus;
+import com.tixypt.chatting.support.enums.SupportRoomStatus;
 import com.tixypt.chatting.support.exception.SupportRoomErrorCode;
 import com.tixypt.chatting.support.exception.SupportRoomException;
 import com.tixypt.chatting.support.message.repository.SupportMessageRepository;
