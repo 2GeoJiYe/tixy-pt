@@ -1,9 +1,9 @@
 package com.tixypt.chatting.support.websocket;
 
-import com.tixypt.chatting.support.message.dto.event.SupportMessageEvent;
-import com.tixypt.chatting.support.read.dto.event.SupportReadReceiptEvent;
-import com.tixypt.chatting.support.read.dto.event.SupportUnreadSyncEvent;
-import com.tixypt.chatting.support.room.dto.event.SupportRoomQueueEvent;
+import com.tixypt.chatting.support.message.dto.event.MessageEvent;
+import com.tixypt.chatting.support.read.dto.event.ReadReceiptEvent;
+import com.tixypt.chatting.support.read.dto.event.UnreadCountSyncEvent;
+import com.tixypt.chatting.support.room.dto.event.RoomQueueEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.Message;
@@ -35,17 +35,17 @@ public class SupportRedisEventSubscriber implements MessageListener {
     private void dispatch(SupportRedisEvent event) {
         switch (event.type()) {
             case MESSAGE -> localSupportEventBroadcaster.broadcastMessage(
-                    objectMapper.convertValue(event.payload(), SupportMessageEvent.class)
+                    objectMapper.convertValue(event.payload(), MessageEvent.class)
             );
             case READ_ROOM -> localSupportEventBroadcaster.broadcastReadRoom(
-                    objectMapper.convertValue(event.payload(), SupportReadReceiptEvent.class)
+                    objectMapper.convertValue(event.payload(), ReadReceiptEvent.class)
             );
             case READ_USER -> localSupportEventBroadcaster.broadcastReadUser(
                     event.targetUserName(),
-                    objectMapper.convertValue(event.payload(), SupportUnreadSyncEvent.class)
+                    objectMapper.convertValue(event.payload(), UnreadCountSyncEvent.class)
             );
             case QUEUE -> localSupportEventBroadcaster.broadcastQueue(
-                    objectMapper.convertValue(event.payload(), SupportRoomQueueEvent.class)
+                    objectMapper.convertValue(event.payload(), RoomQueueEvent.class)
             );
         }
     }

@@ -1,8 +1,8 @@
 package com.tixypt.chatting.support.ai.provider;
 
-import com.tixypt.chatting.support.ai.config.SupportAiProperties;
+import com.tixypt.chatting.support.ai.config.AiProperties;
 import com.tixypt.chatting.support.ai.model.AiReplyDraft;
-import com.tixypt.chatting.support.ai.prompt.SupportAiReplyPolicy;
+import com.tixypt.chatting.support.ai.prompt.AiReplyPolicy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AiReplyResultMapper {
 
-    private final SupportAiProperties supportAiProperties;
+    private final AiProperties aiProperties;
 
     // 1. 빈 응답이면 fallback으로 전환
     // 2. 줄바꿈과 과한 공백을 정리해서 채팅 메시지처럼 다듬어
@@ -24,7 +24,7 @@ public class AiReplyResultMapper {
             return fallback();
         }
 
-        if (normalizedContent.length() <= supportAiProperties.getMaxResponseCharacters()) {
+        if (normalizedContent.length() <= aiProperties.getMaxResponseCharacters()) {
             return AiReplyDraft.normal(normalizedContent);
         }
 
@@ -32,7 +32,7 @@ public class AiReplyResultMapper {
     }
 
     public AiReplyDraft fallback() {
-        return AiReplyDraft.fallback(SupportAiReplyPolicy.FALLBACK_REPLY);
+        return AiReplyDraft.fallback(AiReplyPolicy.FALLBACK_REPLY);
     }
 
     private String normalize(String content) {
@@ -51,7 +51,7 @@ public class AiReplyResultMapper {
     }
 
     private String truncate(String content) {
-        int maxCharacters = supportAiProperties.getMaxResponseCharacters();
+        int maxCharacters = aiProperties.getMaxResponseCharacters();
         if (maxCharacters <= 0 || content.length() <= maxCharacters) {
             return content;
         }

@@ -1,9 +1,9 @@
 package com.tixypt.chatting.support.websocket;
 
-import com.tixypt.chatting.support.message.dto.event.SupportMessageEvent;
-import com.tixypt.chatting.support.read.dto.event.SupportReadReceiptEvent;
-import com.tixypt.chatting.support.read.dto.event.SupportUnreadSyncEvent;
-import com.tixypt.chatting.support.room.dto.event.SupportRoomQueueEvent;
+import com.tixypt.chatting.support.message.dto.event.MessageEvent;
+import com.tixypt.chatting.support.read.dto.event.ReadReceiptEvent;
+import com.tixypt.chatting.support.read.dto.event.UnreadCountSyncEvent;
+import com.tixypt.chatting.support.room.dto.event.RoomQueueEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
@@ -21,7 +21,7 @@ public class SupportEventDispatcher {
 
     // 가능한 경우 레디스 펍섭으로 먼저 시도하고
     // publisher가 없거나 실패하면 로컬 브로드캐스트로 바로 fallback
-    public void dispatchMessage(SupportMessageEvent event) {
+    public void dispatchMessage(MessageEvent event) {
         SupportRedisEventPublisher publisher = supportRedisEventPublisherProvider.getIfAvailable();
         if (publisher == null) {
             localSupportEventBroadcaster.broadcastMessage(event);
@@ -36,14 +36,14 @@ public class SupportEventDispatcher {
         }
     }
 
-    public void dispatchMessageAfterCommit(SupportMessageEvent event) {
+    public void dispatchMessageAfterCommit(MessageEvent event) {
         runAfterCommit(() -> dispatchMessage(event));
     }
 
     public void dispatchReadReceipt(
             String userName,
-            SupportReadReceiptEvent roomEvent,
-            SupportUnreadSyncEvent userEvent
+            ReadReceiptEvent roomEvent,
+            UnreadCountSyncEvent userEvent
     ) {
         // 방 전체에는 roomEvent를 보내고 현재 사용자 개인 채널에는 unread sync를 보낸다
         SupportRedisEventPublisher publisher = supportRedisEventPublisherProvider.getIfAvailable();
@@ -63,15 +63,15 @@ public class SupportEventDispatcher {
 
     public void dispatchReadReceiptAfterCommit(
             String userName,
-            SupportReadReceiptEvent roomEvent,
-            SupportUnreadSyncEvent userEvent
+            ReadReceiptEvent roomEvent,
+            UnreadCountSyncEvent userEvent
     ) {
         runAfterCommit(() -> dispatchReadReceipt(userName, roomEvent, userEvent));
     }
 
 
     // queue 이벤트도 동일하게 레디스 우선 실패하면 로컬 fallback
-    public void dispatchQueueEvent(SupportRoomQueueEvent event) {
+    public void dispatchQueueEvent(RoomQueueEvent event) {
         SupportRedisEventPublisher publisher = supportRedisEventPublisherProvider.getIfAvailable();
         if (publisher == null) {
             localSupportEventBroadcaster.broadcastQueue(event);
@@ -86,15 +86,15 @@ public class SupportEventDispatcher {
         }
     }
 
-    public void dispatchQueueEventAfterCommit(SupportRoomQueueEvent event) {
+    public void dispatchQueueEventAfterCommit(RoomQueueEvent event) {
         runAfterCommit(() -> dispatchQueueEvent(event));
     }
 
     // 레디스를 쓰지 않거나 실패했을 때 로컬로 직접 보냄
     private void localDispatchReadReceipt(
             String userName,
-            SupportReadReceiptEvent roomEvent,
-            SupportUnreadSyncEvent userEvent
+            ReadReceiptEvent roomEvent,
+            UnreadCountSyncEvent userEvent
     ) {
         localSupportEventBroadcaster.broadcastReadRoom(roomEvent);
         localSupportEventBroadcaster.broadcastReadUser(userName, userEvent);
