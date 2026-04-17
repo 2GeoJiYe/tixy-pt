@@ -48,8 +48,8 @@ public interface SupportRoomRepository extends JpaRepository<SupportRoom, Long> 
             from SupportRoom room
             where room.counselorUserId = :counselorUserId
               and room.status in (
-                    com.tixypt.chatting.support.entity.SupportRoomStatus.OPEN,
-                    com.tixypt.chatting.support.entity.SupportRoomStatus.SOLVED
+                    com.tixypt.chatting.support.enums.SupportRoomStatus.OPEN,
+                    com.tixypt.chatting.support.enums.SupportRoomStatus.SOLVED
               )
             order by coalesce(room.lastMessageAt, room.createdAt) desc, room.id desc
             """)
@@ -61,7 +61,7 @@ public interface SupportRoomRepository extends JpaRepository<SupportRoom, Long> 
             select room
             from SupportRoom room
             where room.lastCounselorUserId = :counselorUserId
-              and room.status = com.tixypt.chatting.support.entity.SupportRoomStatus.CLOSED
+              and room.status = com.tixypt.chatting.support.enums.SupportRoomStatus.CLOSED
             order by room.updatedAt desc, room.id desc
             """)
     Slice<SupportRoom> findClosedRoomsForCounselor(@Param("counselorUserId") Long counselorUserId, Pageable pageable);
@@ -72,7 +72,7 @@ public interface SupportRoomRepository extends JpaRepository<SupportRoom, Long> 
             select room
             from SupportRoom room
             where room.counselorUserId is null
-              and room.status = com.tixypt.chatting.support.entity.SupportRoomStatus.OPEN
+              and room.status = com.tixypt.chatting.support.enums.SupportRoomStatus.OPEN
             order by coalesce(room.lastMessageAt, room.createdAt) desc, room.id desc
             """)
     Slice<SupportRoom> findUnassignedOpenRooms(Pageable pageable);
@@ -83,8 +83,8 @@ public interface SupportRoomRepository extends JpaRepository<SupportRoom, Long> 
             select room
             from SupportRoom room
             where room.status in (
-                    com.tixypt.chatting.support.entity.SupportRoomStatus.OPEN,
-                    com.tixypt.chatting.support.entity.SupportRoomStatus.SOLVED
+                    com.tixypt.chatting.support.enums.SupportRoomStatus.OPEN,
+                    com.tixypt.chatting.support.enums.SupportRoomStatus.SOLVED
                   )
               and room.counselorUserId is not null
               and room.counselorLastActiveAt is not null
@@ -102,7 +102,7 @@ public interface SupportRoomRepository extends JpaRepository<SupportRoom, Long> 
                 room.counselorLastActiveAt = :claimedAt
             where room.id = :roomId
               and room.counselorUserId is null
-              and room.status = com.tixypt.chatting.support.entity.SupportRoomStatus.OPEN
+              and room.status = com.tixypt.chatting.support.enums.SupportRoomStatus.OPEN
             """)
     int claimCounselorIfUnassigned(
             @Param("roomId") Long roomId,
@@ -114,7 +114,7 @@ public interface SupportRoomRepository extends JpaRepository<SupportRoom, Long> 
     @Query("""
             update SupportRoom room
             set room.solvedAt = coalesce(room.lastMessageAt, room.updatedAt, room.createdAt)
-            where room.status = com.tixypt.chatting.support.entity.SupportRoomStatus.SOLVED
+            where room.status = com.tixypt.chatting.support.enums.SupportRoomStatus.SOLVED
               and room.solvedAt is null
             """)
     int backfillSolvedAtForSolvedRooms();
@@ -124,7 +124,7 @@ public interface SupportRoomRepository extends JpaRepository<SupportRoom, Long> 
     @Query("""
             select room
             from SupportRoom room
-            where room.status = com.tixypt.chatting.support.entity.SupportRoomStatus.SOLVED
+            where room.status = com.tixypt.chatting.support.enums.SupportRoomStatus.SOLVED
               and room.solvedAt is not null
               and room.solvedAt <= :cutoff
             order by room.solvedAt asc, room.id asc

@@ -20,10 +20,10 @@ public interface SupportMessageRepository extends JpaRepository<SupportMessage, 
             select count(message)
             from SupportMessage message
             where message.room.id = :roomId
-              and message.messageType <> com.tixypt.chatting.support.entity.SupportMessageType.SYSTEM
+              and message.messageType <> com.tixypt.chatting.support.enums.SupportMessageType.SYSTEM
               and message.id > :lastReadMessageId
               and (
-                    message.senderType <> com.tixypt.chatting.support.entity.SupportMessageSenderType.USER
+                    message.senderType <> com.tixypt.chatting.support.enums.SupportMessageSenderType.USER
                     or message.senderUserId is null
                     or message.senderUserId <> :customerUserId
               )
@@ -40,10 +40,10 @@ public interface SupportMessageRepository extends JpaRepository<SupportMessage, 
             select count(message)
             from SupportMessage message
             where message.room.id = :roomId
-              and message.messageType <> com.tixypt.chatting.support.entity.SupportMessageType.SYSTEM
+              and message.messageType <> com.tixypt.chatting.support.enums.SupportMessageType.SYSTEM
               and message.id > :lastReadMessageId
               and (
-                    message.senderType <> com.tixypt.chatting.support.entity.SupportMessageSenderType.COUNSELOR
+                    message.senderType <> com.tixypt.chatting.support.enums.SupportMessageSenderType.COUNSELOR
                     or message.senderUserId is null
                     or message.senderUserId <> :counselorUserId
               )

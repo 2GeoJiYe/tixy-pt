@@ -1,6 +1,5 @@
 package com.tixypt.chatting.support.websocket;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tixypt.chatting.support.message.dto.event.SupportMessageEvent;
 import com.tixypt.chatting.support.read.dto.event.SupportReadReceiptEvent;
 import com.tixypt.chatting.support.read.dto.event.SupportUnreadSyncEvent;
@@ -10,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.stereotype.Component;
+import tools.jackson.databind.ObjectMapper;
 
 @Slf4j
 @Component
