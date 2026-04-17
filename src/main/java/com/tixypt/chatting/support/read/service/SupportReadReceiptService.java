@@ -32,7 +32,7 @@ public class SupportReadReceiptService {
     private final MemberService memberService;
     private final SupportEventDispatcher supportEventDispatcher;
 
-    // 읽음 처리랑 unread 재 계산은 항상 같은 기준으로 움직이니까 검증, 상태 반영, 이벤트 payload 생성을 한 묶음
+    // 읽음 위치를 문의방에 반영한다
     @Transactional
     public void markAsRead(
             Long loginUserId,
@@ -45,22 +45,21 @@ public class SupportReadReceiptService {
         }
 
         Member loginUser = memberService.findById(loginUserId);
-        SupportRoom room = supportRoomRepository.findById(roomId)
+        SupportRoom room = supportRoomRepository.findByIdForUpdate(roomId)
                 .orElseThrow(() -> new SupportRoomException(SupportRoomErrorCode.ROOM_NOT_FOUND));
 
         SupportAccessPolicy.validateParticipantWritable(loginUser);
         SupportAccessPolicy.validateRoomAccess(loginUser, room);
-        validateRoomWritable(room);
+        SupportAccessPolicy.validateRoomWritable(room);
 
-        if (isCounselor(loginUser)) {
-            // 상담원이 읽음 처리했다면 그 방을 실제로 보고 있는 중으로 간주
+        if (SupportAccessPolicy.isCounselor(loginUser)) {
             room.touchCounselorActivity(LocalDateTime.now());
         }
 
         validateReadMessage(roomId, lastReadMessageId);
 
         LocalDateTime readAt = LocalDateTime.now();
-        boolean updated = isCounselor(loginUser)
+        boolean updated = SupportAccessPolicy.isCounselor(loginUser)
                 ? room.markCounselorRead(lastReadMessageId, readAt)
                 : room.markCustomerRead(lastReadMessageId, readAt);
 
@@ -69,10 +68,10 @@ public class SupportReadReceiptService {
         }
 
         long unreadCount = unreadCount(room, loginUser);
-        LocalDateTime effectiveReadAt = isCounselor(loginUser)
+        LocalDateTime effectiveReadAt = SupportAccessPolicy.isCounselor(loginUser)
                 ? room.getCounselorLastReadAt()
                 : room.getCustomerLastReadAt();
-        Long effectiveLastReadMessageId = isCounselor(loginUser)
+        Long effectiveLastReadMessageId = SupportAccessPolicy.isCounselor(loginUser)
                 ? room.getCounselorLastReadMessageId()
                 : room.getCustomerLastReadMessageId();
 
@@ -91,37 +90,25 @@ public class SupportReadReceiptService {
                 effectiveReadAt
         );
 
-        supportEventDispatcher.dispatchReadReceipt(userName, roomEvent, userEvent);
+        supportEventDispatcher.dispatchReadReceiptAfterCommit(userName, roomEvent, userEvent);
     }
 
 
-    // 다른 방 메시지를 읽음 기준점으로 보내는 잘못된 요청을 막기 위해서 lastReadMessageId가 현재 문의방 메시지인지 먼저 검증
+    // 읽음 기준 메시지가 실제로 같은 문의방에 속해 잇는지 확인
     private void validateReadMessage(Long roomId, Long lastReadMessageId) {
         if (!supportMessageRepository.existsByIdAndRoomId(lastReadMessageId, roomId)) {
             throw new SupportRoomException(SupportRoomErrorCode.INVALID_READ_RECEIPT);
         }
     }
 
-    // unread 기준은 역할마다 다르니까 고객이랑 상담원 각각의 마지막 읽음 위치로 따로 계산
+    // 현재 사용자가 읽지 않은 메시지 수 다시 계산
     private long unreadCount(SupportRoom room, Member loginUser) {
-        if (isCounselor(loginUser)) {
-            long lastReadMessageId = room.getCounselorLastReadMessageId() == null
-                    ? 0L
-                    : room.getCounselorLastReadMessageId();
-            return supportMessageRepository.countUnreadForCounselor(
-                    room.getId(),
-                    lastReadMessageId,
-                    loginUser.getId()
-            );
+        if (SupportAccessPolicy.isCounselor(loginUser)) {
+            long lastReadMessageId = room.getCounselorLastReadMessageId() == null ? 0L : room.getCounselorLastReadMessageId();
+            return supportMessageRepository.countUnreadForCounselor(room.getId(), lastReadMessageId, loginUser.getId());
         }
 
-        long lastReadMessageId = room.getCustomerLastReadMessageId() == null
-                ? 0L
-                : room.getCustomerLastReadMessageId();
-        return supportMessageRepository.countUnreadForCustomer(
-                room.getId(),
-                lastReadMessageId,
-                loginUser.getId()
-        );
+        long lastReadMessageId = room.getCustomerLastReadMessageId() == null ? 0L : room.getCustomerLastReadMessageId();
+        return supportMessageRepository.countUnreadForCustomer(room.getId(), lastReadMessageId, loginUser.getId());
     }
 }
