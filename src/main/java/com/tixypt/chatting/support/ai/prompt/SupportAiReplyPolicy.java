@@ -1,4 +1,4 @@
-package com.tixypt.chatting.ai.prompt;
+package com.tixypt.chatting.support.ai.prompt;
 
 public class SupportAiReplyPolicy {
 

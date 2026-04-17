@@ -1,6 +1,6 @@
-package com.tixypt.chatting.ai.config;
+package com.tixypt.chatting.support.ai.config;
 
-import com.tixypt.chatting.ai.prompt.SupportAiReplyPolicy;
+import com.tixypt.chatting.support.ai.prompt.SupportAiReplyPolicy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -100,6 +100,10 @@ public class SupportAiAdvisorConfig {
         // OpenAi ChatModel이 준비된 경우에 ChatClient 반환
         public ChatClient openAiClient() {
             return build(openAiChatModelProvider.getIfAvailable());
+        }
+
+        public ChatClient ollamaClient() {
+            return build(ollamaChatModelProvider.getIfAvailable());
         }
 
 

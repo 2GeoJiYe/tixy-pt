@@ -1,4 +1,4 @@
-package com.tixypt.chatting.ai.config;
+package com.tixypt.chatting.support.ai.config;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
