@@ -49,6 +49,7 @@ public class AiReplyService {
         SupportAccessPolicy.validateRoomAccess(loginUser, room);
         SupportAccessPolicy.validateRoomWritable(room);
         SupportAccessPolicy.validateParticipantWritable(loginUser);
+        validateAiReplyAllowed(room);
 
         if (SupportAccessPolicy.isCounselor(loginUser)) {
             room.touchCounselorActivity(LocalDateTime.now());
@@ -90,5 +91,11 @@ public class AiReplyService {
                         )
                         .map(SupportMessage::getContent)
                         .orElse(null));
+    }
+
+    private void validateAiReplyAllowed(SupportRoom room) {
+        if (room.getCustomerRequestedCounselorAt() != null && room.getCounselorUserId() == null) {
+            throw new SupportRoomException(SupportRoomErrorCode.AI_REPLY_BLOCKED_BY_COUNSELOR_REQUEST);
+        }
     }
 }
