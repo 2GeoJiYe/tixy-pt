@@ -16,6 +16,13 @@ java {
 
 repositories {
     mavenCentral()
+    maven { url 'https://repo.spring.io/milestone' }
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.ai:spring-ai-bom:2.0.0-M4"
+    }
 }
 
 dependencies {
@@ -32,6 +39,12 @@ dependencies {
     // jwt 인증 정보랑 STOMP 웹소켓 연결 처리
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
+
+    // Spring AI OpenAI/Ollama 모델 연동
+    implementation 'org.springframework.ai:spring-ai-starter-model-openai'
+    implementation 'org.springframework.ai:spring-ai-starter-model-ollama'
+    implementation 'org.springframework.ai:spring-ai-vector-store'
+    implementation 'org.springframework.ai:spring-ai-advisors-vector-store'
 
     // DB 연결, 로컬 환경 변수 로딩
     implementation 'io.github.cdimascio:dotenv-java:3.0.0'
