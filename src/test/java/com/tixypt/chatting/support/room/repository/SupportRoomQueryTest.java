@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         "spring.ai.model.audio.transcription=none"
 })
 @ActiveProfiles("test")
-//@Disabled("조회 성능 실험용 테스트")
+@Disabled("조회 성능 실험용 테스트")
 public class SupportRoomQueryTest {
 
     private static final int QUERY_LIMIT = 50;
