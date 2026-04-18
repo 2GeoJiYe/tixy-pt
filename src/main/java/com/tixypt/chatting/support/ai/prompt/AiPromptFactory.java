@@ -20,10 +20,12 @@ public class AiPromptFactory {
     private static final String EMPTY_VALUE = "없음";
     private static final String EMPTY_MESSAGE_CONTENT = "(빈 메시지)";
     private static final String RESPONSE_GUIDE = """
-            [응답 작성 가이드]
-            - 고객에게 바로 보여 줄 수 있는 짧고 공손한 문장으로 답변합니다.
+            아래 원칙만 지켜 답변하세요.
+            - 답변 본문만 작성하고, 제목이나 대괄호 라벨은 출력하지 않습니다.
+            - 고객 질문을 그대로 반복하지 않습니다.
+            - 고객에게 바로 보여 줄 수 있는 자연스러운 한국어 2~4문장으로 답변합니다.
             - 아직 확정할 수 없는 내용은 단정하지 말고 상담원 확인이 필요하다고 안내합니다.
-            - 주문번호나 예매 정보처럼 추가 확인이 필요한 경우 자연스럽게 요청합니다.
+            - 주문번호나 예매 정보처럼 추가 확인이 필요한 경우 필요한 정보만 짧게 요청합니다.
             """;
 
 
@@ -32,13 +34,13 @@ public class AiPromptFactory {
         return new AiPromptContext(
                 latestCustomerMessage,
                 """
-                [문의방 ID]
+                고객 지원 채팅에 들어갈 답변을 작성하세요.
+                문의방 ID는 %s 입니다.
+                
+                고객의 마지막 질문:
                 %s
-
-                [현재 고객 질문]
-                %s
-
-                [최근 대화 흐름 - 오래된 순]
+                
+                최근 대화 흐름(오래된 순):
                 %s
 
                 %s

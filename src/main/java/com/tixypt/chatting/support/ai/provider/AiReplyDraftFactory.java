@@ -9,26 +9,37 @@ import org.springframework.util.StringUtils;
 
 import java.util.stream.Collectors;
 
+// Ai 응답 후처리 규칙
+// 1. 빈 응답 fallback
+// 2. 줄바꿈과 공백 처리
+// 3. 최대 길이 제한
+// 4. 프롬프트 마커 노출 차단
+// 나머지 모델별로 품질을 보정하는 건 각자 처리
 @Component
 @RequiredArgsConstructor
 public class AiReplyDraftFactory {
 
+    private static final String[] PROMPT_MARKERS = {
+            "[문의방 ID]",
+            "[현재 고객 질문]",
+            "[최근 대화 흐름",
+            "[응답 작성 가이드]"
+    };
+
     private final AiProperties aiProperties;
 
-    // 1. 빈 응답이면 fallback으로 전환
-    // 2. 줄바꿈과 과한 공백을 정리해서 채팅 메시지처럼 다듬어
-    // 3. 너무 긴 응답은 운영 정책 기준의 길이 안으로 잘라내
     public AiReplyDraft toAnswer(String content) {
         String normalizedContent = normalize(content);
         if (!StringUtils.hasText(normalizedContent)) {
             return fallback();
         }
 
-        if (normalizedContent.length() <= aiProperties.getMaxResponseCharacters()) {
-            return AiReplyDraft.normal(normalizedContent);
+        String candidate = truncate(normalizedContent);
+        if (containsPromptMarker(candidate)) {
+            return fallback();
         }
 
-        return AiReplyDraft.normal(truncate(normalizedContent));
+        return AiReplyDraft.normal(candidate);
     }
 
     public AiReplyDraft fallback() {
@@ -65,5 +76,14 @@ public class AiReplyDraftFactory {
             return content.substring(0, wordBoundary).trim();
         }
         return content.substring(0, maxCharacters).trim();
+    }
+
+    private boolean containsPromptMarker(String content) {
+        for (String promptMarker : PROMPT_MARKERS) {
+            if (content.contains(promptMarker)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -22,10 +22,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionOperations;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
+// AI 선응답 생성하는 것의 전체 흐름을 담당
+// AI 호출은 느릴 수 있으니까 먼저 읽기/검증/프롬프트 생성을 끝낸 뒤에 모델 호출하고
+// 마지막에 짧은 write 트랜잭션으로 다시 잠가서 메시지 저장
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -38,27 +42,34 @@ public class AiReplyService {
     private final AiPromptFactory aiPromptFactory;
     private final AiReplyProvider aiReplyProvider;
     private final SupportEventDispatcher supportEventDispatcher;
+    private final TransactionOperations transactionOperations;
 
-    // 현재 문의방의 최신 대화를 기준으로 ai 초안을 만들고 그걸 바탕으로 실제 채팅 메시지처럼 저장하고 연결
+    // 1. 현재 방 접근/상태를 잠금 없이 먼저 검증을 하고
+    // 2. 최근 대화로 프롬프트를 만든 뒤에 ai 호출하고
+    // 마지막 저장에서만 짧게 락 잡아서 ai 메시지 반영
     @Transactional
     public AiReplyResponse createAiReply(Long loginUserId, Long roomId) {
         Member loginUser = memberService.findById(loginUserId);
-        SupportRoom room = supportRoomRepository.findByIdForUpdate(roomId)
-                .orElseThrow(() -> new SupportRoomException(SupportRoomErrorCode.ROOM_NOT_FOUND));
-
-        SupportAccessPolicy.validateRoomAccess(loginUser, room);
-        SupportAccessPolicy.validateRoomWritable(room);
-        SupportAccessPolicy.validateParticipantWritable(loginUser);
-        validateAiReplyAllowed(room);
-
-        if (SupportAccessPolicy.isCounselor(loginUser)) {
-            room.touchCounselorActivity(LocalDateTime.now());
-        }
+        SupportRoom room = getRoomOrThrow(roomId);
+        validateAiReplyRequest(loginUser, room);
 
         List<SupportMessage> recentMessages = fetchRecentMessages(roomId);
         String latestCustomerMessage = findLatestCustomerMessage(roomId, recentMessages);
         AiPromptContext promptContext = aiPromptFactory.create(roomId, latestCustomerMessage, recentMessages);
         AiReplyDraft answer = aiReplyProvider.generate(promptContext);
+
+        return transactionOperations.execute(status -> saveAiReply(loginUser, roomId, answer));
+    }
+
+    private AiReplyResponse saveAiReply(Member loginUser, Long roomId, AiReplyDraft answer) {
+        SupportRoom room = supportRoomRepository.findByIdForUpdate(roomId)
+                .orElseThrow(() -> new SupportRoomException(SupportRoomErrorCode.ROOM_NOT_FOUND));
+
+        validateAiReplyRequest(loginUser, room);
+
+        if (SupportAccessPolicy.isCounselor(loginUser)) {
+            room.touchCounselorActivity(LocalDateTime.now());
+        }
 
         SupportMessage aiMessage = supportMessageRepository.save(
                 SupportMessage.text(room, null, SupportMessageSenderType.AI, answer.content())
@@ -68,6 +79,18 @@ public class AiReplyService {
         MessageEvent event = MessageEvent.from(aiMessage);
         supportEventDispatcher.dispatchMessageAfterCommit(event);
         return new AiReplyResponse(event, answer.fallback());
+    }
+
+    private void validateAiReplyRequest(Member loginUser, SupportRoom room) {
+        SupportAccessPolicy.validateRoomAccess(loginUser, room);
+        SupportAccessPolicy.validateRoomWritable(room);
+        SupportAccessPolicy.validateParticipantWritable(loginUser);
+        validateAiReplyAllowed(room);
+    }
+
+    private SupportRoom getRoomOrThrow(Long roomId) {
+        return supportRoomRepository.findById(roomId)
+                .orElseThrow(() -> new SupportRoomException(SupportRoomErrorCode.ROOM_NOT_FOUND));
     }
 
     // 최신 대화 몇 건만 읽어서 프롬프트 재료로 사용
