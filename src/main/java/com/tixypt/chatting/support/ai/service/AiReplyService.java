@@ -24,7 +24,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionOperations;
 import org.springframework.util.StringUtils;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 // 고객 메시지 뒤에 자동으로 붙는 ai 1차 응답 생성
@@ -37,7 +36,6 @@ public class AiReplyService {
 
     private final SupportRoomRepository supportRoomRepository;
     private final SupportMessageRepository supportMessageRepository;
-    private final MemberService memberService;
     private final AiProperties aiProperties;
     private final AiPromptFactory aiPromptFactory;
     private final AiReplyProvider aiReplyProvider;
